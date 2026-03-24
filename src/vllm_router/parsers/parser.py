@@ -435,6 +435,13 @@ def parse_args():
         help="Timeout for LMCache worker (seconds)",
     )
 
+    parser.add_argument(
+        "--external-providers-config",
+        type=str,
+        default=None,
+        help="Path to a YAML file defining external LLM provider configurations (startup-time only).",
+    )
+
     args = parser.parse_args()
     args = load_initial_config_from_config_file_if_required(parser, args)
 
