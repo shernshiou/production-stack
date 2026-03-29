@@ -229,6 +229,9 @@ def initialize_all(app: FastAPI, args):
             health_check_timeout_seconds=args.backend_health_check_timeout_seconds,
         )
 
+    elif args.service_discovery == "external-only":
+        initialize_service_discovery(ServiceDiscoveryType.EXTERNAL_ONLY)
+
     else:
         raise ValueError(f"Invalid service discovery type: {args.service_discovery}")
 
