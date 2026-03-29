@@ -120,6 +120,11 @@ async def lifespan(app: FastAPI):
     if hasattr(service_discovery, "initialize_client_sessions"):
         await service_discovery.initialize_client_sessions()
 
+    # Validate external provider models against live provider model lists
+    if getattr(app.state, "external_provider_registry", None) is not None:
+        logger.info("Validating external provider models against live provider APIs")
+        await app.state.external_provider_registry.validate_models()
+
     yield
     await app.state.aiohttp_client_wrapper.stop()
 

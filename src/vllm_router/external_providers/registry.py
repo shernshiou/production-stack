@@ -172,6 +172,47 @@ class ExternalProviderManager:
         """
         return list(self._adapters.keys())
 
+    async def validate_models(self) -> None:
+        """
+        Validate registered models against each provider's live model list.
+
+        Queries every provider's /v1/models endpoint and removes any model IDs
+        (including aliases) from the index that the provider does not actually
+        serve. This prevents misconfigured or unavailable models from being
+        advertised or routed to.
+        """
+        for provider_name, adapter in self._adapters.items():
+            available = set(await adapter.fetch_available_model_ids())
+            if not available:
+                logger.warning(
+                    f"Provider '{provider_name}': could not fetch available models, "
+                    "skipping validation (all configured models kept)"
+                )
+                continue
+
+            to_remove = [
+                model_id
+                for model_id, (pname, _, canonical_id) in self._model_index.items()
+                if pname == provider_name and canonical_id not in available
+            ]
+            for model_id in to_remove:
+                del self._model_index[model_id]
+                logger.warning(
+                    f"Provider '{provider_name}': removing model '{model_id}' "
+                    "— not found in provider's model list"
+                )
+
+            if to_remove:
+                remaining = [
+                    mid
+                    for mid, (pname, _, _) in self._model_index.items()
+                    if pname == provider_name
+                ]
+                logger.info(
+                    f"Provider '{provider_name}': validated models, "
+                    f"kept {remaining}, removed {to_remove}"
+                )
+
     async def health_check(self) -> Dict[str, bool]:
         """
         Perform health checks for all registered providers.

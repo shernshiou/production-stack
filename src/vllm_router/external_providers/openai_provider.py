@@ -141,6 +141,28 @@ class OpenAIProvider(ExternalProviderAdapter):
             logger.warning(f"OpenAI Provider: Health check failed with error: {e}")
             return False
 
+    async def fetch_available_model_ids(self) -> list[str]:
+        """Query the provider's /v1/models endpoint and return available model IDs."""
+        try:
+            session = await self._get_session()
+            url = self.config.api_base.rstrip("/") + "/v1/models"
+            headers = self._build_headers()
+            async with session.get(url, headers=headers) as response:
+                if response.status != 200:
+                    logger.warning(
+                        f"OpenAI Provider '{self.config.name}': "
+                        f"failed to fetch models (status {response.status})"
+                    )
+                    return []
+                data = await response.json()
+                return [m["id"] for m in data.get("data", [])]
+        except Exception as e:
+            logger.warning(
+                f"OpenAI Provider '{self.config.name}': "
+                f"could not fetch available models: {e}"
+            )
+            return []
+
     async def close(self) -> None:
         if self._session and not self._session.closed:
             await self._session.close()

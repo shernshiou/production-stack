@@ -72,6 +72,20 @@ class ExternalProviderAdapter(abc.ABC):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
+    async def fetch_available_model_ids(self) -> list[str]:
+        """
+        Fetch the list of model IDs actually available at the provider.
+
+        This queries the provider's /v1/models endpoint (or equivalent) and
+        returns the canonical IDs it reports. Used at startup to validate that
+        the models in the config are actually offered by the provider.
+
+        Returns:
+            A list of model IDs the provider currently serves.
+        """
+        raise NotImplementedError
+
     def get_provider_name(self) -> str:
         """
         Get the name of the provider this adapter is for.
